@@ -47,7 +47,7 @@ jobs:
             RANGE="HEAD"
           fi
           echo "## What's Changed" > release-notes.md
-          git log --merges --pretty=format:'- %s ([%h](https://github.com/${{ github.repository }}/commit/%h)) by @%an' $RANGE | grep -E 'Merge pull request' >> release-notes.md
+          git log --merges --pretty=format:'- %s ([%h](https://github.com/${{ github.repository }}/commit/%h)) by @%an' $RANGE | grep -E 'Merge pull request' >> release-notes.md || true
           echo "release_notes<<EOF" >> $GITHUB_OUTPUT
           cat release-notes.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
