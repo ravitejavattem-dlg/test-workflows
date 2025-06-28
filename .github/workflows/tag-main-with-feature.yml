@@ -47,7 +47,25 @@ jobs:
             RANGE="HEAD"
           fi
           echo "## What's Changed" > release-notes.md
-          git log --merges --pretty=format:'- %s ([%h](https://github.com/${{ github.repository }}/commit/%h)) by @%an' $RANGE | grep -E 'Merge pull request' >> release-notes.md || true
+          git log --merges --pretty=format:'%s||%an' $RANGE | \
+            grep -E 'Merge pull request' | \
+            sed -E 's/Merge pull request #(\d+) from [^ ]+ (.*)/\1||\2/' | \
+            while IFS='||' read -r subject author; do
+              PR_NUM=$(echo "$subject" | grep -oE '^[0-9]+')
+              TITLE=$(echo "$subject" | sed -E 's/^[0-9]+\|\|(.*)/\1/')
+              if echo "$TITLE" | grep -qi 'add'; then
+                PREFIX="Added"
+              elif echo "$TITLE" | grep -qi 'change'; then
+                PREFIX="Changed"
+              elif echo "$TITLE" | grep -qi 'move'; then
+                PREFIX="Moved"
+              else
+                PREFIX="Updated"
+              fi
+              echo "$PREFIX $TITLE by @$author in #$PR_NUM" >> release-notes.md
+            done
+          echo "" >> release-notes.md
+          echo "Full Changelog: https://github.com/${{ github.repository }}/commits/$TAG" >> release-notes.md
           echo "release_notes<<EOF" >> $GITHUB_OUTPUT
           cat release-notes.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
