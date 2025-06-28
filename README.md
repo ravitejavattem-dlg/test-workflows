@@ -31,4 +31,4 @@ Example: `feature/v1.2.3`
 
 ## License
 
-This project is for demonstration purposes.
+This project is for demonstration purpose.
