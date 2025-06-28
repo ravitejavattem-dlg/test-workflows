@@ -1,7 +1,9 @@
 name: Tag main on feature branch merge
 
+permissions:
+  contents: write
+
 on:
-  permissions: write
   pull_request:
     types: [closed]
     branches:
