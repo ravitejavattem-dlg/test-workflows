@@ -36,6 +36,22 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Generate release notes
+        id: generate_notes
+        run: |
+          TAG="v${{ steps.extract_version.outputs.version }}"
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            RANGE="$LAST_TAG..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+          echo "## What's Changed" > release-notes.md
+          git log --merges --pretty=format:'- %s ([%h](https://github.com/${{ github.repository }}/commit/%h)) by @%an' $RANGE | grep -E 'Merge pull request' >> release-notes.md
+          echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+          cat release-notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create tag on main
         if: steps.extract_version.outputs.version != '' && steps.check_tag.outputs.exists == 'false'
         run: |
@@ -52,4 +68,4 @@ jobs:
         with:
           tag_name: v${{ steps.extract_version.outputs.version }}
           release_name: Release v${{ steps.extract_version.outputs.version }}
-          generate_release_notes: true
+          body: ${{ steps.generate_notes.outputs.release_notes }}
