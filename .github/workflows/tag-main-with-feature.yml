@@ -1,0 +1,42 @@
+name: Tag main on feature branch merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  tag-main:
+    if: github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'feature/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract version from branch name
+        id: extract_version
+        run: |
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          VERSION=$(echo "$BRANCH_NAME" | sed -nE 's|feature/v([0-9]+\.[0-9]+\.[0-9]+).*|\1|p')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Check if tag already exists
+        id: check_tag
+        run: |
+          TAG="v${{ steps.extract_version.outputs.version }}"
+          if git fetch --tags && git tag --list | grep -q "^$TAG$"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create tag on main
+        if: steps.extract_version.outputs.version != '' && steps.check_tag.outputs.exists == 'false'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag "v${{ steps.extract_version.outputs.version }}"
+          git push origin "v${{ steps.extract_version.outputs.version }}"
