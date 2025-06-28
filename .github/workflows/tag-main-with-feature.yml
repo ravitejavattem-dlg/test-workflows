@@ -43,3 +43,13 @@ jobs:
           git config user.email "actions@github.com"
           git tag "v${{ steps.extract_version.outputs.version }}"
           git push origin "v${{ steps.extract_version.outputs.version }}"
+
+      - name: Create GitHub Release
+        if: steps.extract_version.outputs.version != '' && steps.check_tag.outputs.exists == 'false'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.extract_version.outputs.version }}
+          release_name: Release v${{ steps.extract_version.outputs.version }}
+          generate_release_notes: true
